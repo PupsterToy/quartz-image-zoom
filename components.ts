@@ -1,7 +1,13 @@
-const ImageZoom: any = () => null
+import type { QuartzComponent, QuartzComponentConstructor } from "../../components/types"
 
-// 全局灯箱样式（注入到每页）
-ImageZoom.css = `
+// 全局图片灯箱组件（点击放大 + 滚轮缩放 + 拖拽平移 + 双击复位 + Esc 关闭）。
+// 不渲染任何布局内容，灯箱 DOM 在 afterDOMLoaded 里动态创建。
+const ImageZoom: QuartzComponentConstructor = () => {
+  const component: QuartzComponent = () => {
+    return null
+  }
+
+  component.css = `
 .img-zoom-overlay {
   position: fixed;
   inset: 0;
@@ -38,8 +44,7 @@ ImageZoom.css = `
 }
 `
 
-// 页面加载后执行（Quartz 会把它全局注入每页脚本）
-ImageZoom.afterDOMLoaded = `
+  component.afterDOMLoaded = `
 if (window.__imgZoomReady) return;
 window.__imgZoomReady = true;
 
@@ -103,5 +108,8 @@ zoomImg.addEventListener('dblclick', reset);
 overlay.addEventListener('click', function (e) { if (e.target === overlay) closeImg(); });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeImg(); });
 `
+
+  return component
+}
 
 export { ImageZoom }

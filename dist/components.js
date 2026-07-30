@@ -1,6 +1,9 @@
 // components.ts
-var ImageZoom = () => null;
-ImageZoom.css = `
+var ImageZoom = () => {
+  const component = () => {
+    return null;
+  };
+  component.css = `
 .img-zoom-overlay {
   position: fixed;
   inset: 0;
@@ -36,7 +39,7 @@ ImageZoom.css = `
   pointer-events: none;
 }
 `;
-ImageZoom.afterDOMLoaded = `
+  component.afterDOMLoaded = `
 if (window.__imgZoomReady) return;
 window.__imgZoomReady = true;
 
@@ -100,6 +103,8 @@ zoomImg.addEventListener('dblclick', reset);
 overlay.addEventListener('click', function (e) { if (e.target === overlay) closeImg(); });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeImg(); });
 `;
+  return component;
+};
 export {
   ImageZoom
 };
