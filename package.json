@@ -1,0 +1,25 @@
+{
+  "name": "image-zoom",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/components.js",
+  "exports": {
+    ".": "./dist/components.js",
+    "./components": "./dist/components.js"
+  },
+  "quartz": {
+    "name": "image-zoom",
+    "displayName": "Image Zoom",
+    "description": "点击正文图片打开灯箱，支持滚轮缩放、拖拽平移、双击复位、Esc 关闭",
+    "version": "1.0.0",
+    "requiresInstall": false,
+    "components": {
+      "ImageZoom": {
+        "name": "ImageZoom",
+        "displayName": "Image Zoom",
+        "description": "点击正文图片打开灯箱，支持滚轮缩放、拖拽平移、双击复位、Esc 关闭",
+        "version": "1.0.0"
+      }
+    }
+  }
+}
