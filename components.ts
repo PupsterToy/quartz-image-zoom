@@ -1,15 +1,14 @@
+// Global image lightbox component (click to enlarge, scroll to zoom, drag to pan, double-click to reset, Esc to close).
+// It renders no layout content; the lightbox DOM is created dynamically in afterDOMLoaded.
+//
+// Key point: Quartz uses SPA client-side routing; when navigating, micromorph replaces all child nodes of document.body,
+// which destroys the lightbox overlay directly attached to body. This component rebuilds the overlay on 'nav' and 'render' events,
+// so clicking images works correctly both after a hard refresh and after client-side navigation.
+
 import type { QuartzComponent, QuartzComponentConstructor } from "../../components/types"
 
-// 全局图片灯箱组件（点击放大 + 滚轮缩放 + 拖拽平移 + 双击复位 + Esc 关闭）。
-// 不渲染任何布局内容，灯箱 DOM 在 afterDOMLoaded 里动态创建。
-//
-// 关键点：Quartz 使用 SPA 客户端路由，切页时 micromorph 会替换 document.body 的全部子节点，
-// 导致直接挂在 body 上的灯箱 overlay 被销毁。本组件在 nav / render 事件中重建 overlay，
-// 因此无论在首页硬刷新还是客户端切页后，点击图片都能正常放大。
 const ImageZoom: QuartzComponentConstructor = () => {
-  const component: QuartzComponent = () => {
-    return null
-  }
+  const component: QuartzComponent = () => null
 
   component.css = `
 .img-zoom-overlay {
@@ -25,13 +24,13 @@ const ImageZoom: QuartzComponentConstructor = () => {
 }
 .img-zoom-overlay.open { display: flex; }
 .img-zoom-img {
-  max-width: 90vw;
-  max-height: 90vh;
+  /* Removed max-width/max-height – size is now controlled via transform */
   transform-origin: center center;
   cursor: grab;
   user-select: none;
   -webkit-user-drag: none;
   will-change: transform;
+  image-rendering: auto; /* auto for photos, crisp-edges for pixel art / screenshots */
 }
 .img-zoom-img.grabbing { cursor: grabbing; }
 .img-zoom-hint {
@@ -56,14 +55,62 @@ const ImageZoom: QuartzComponentConstructor = () => {
   var overlay, zoomImg, hint;
   var scale = 1, posX = 0, posY = 0, panning = false, startX = 0, startY = 0;
 
+  // Apply current transform (translate + scale)
   function apply() {
     zoomImg.style.transform = 'translate(' + posX + 'px,' + posY + 'px) scale(' + scale + ')';
   }
-  function reset() { scale = 1; posX = 0; posY = 0; apply(); }
-  function openImg(src, alt) { zoomImg.src = src; zoomImg.alt = alt; reset(); overlay.classList.add('open'); }
-  function closeImg() { overlay.classList.remove('open'); }
 
-  // 重建灯箱 DOM（切页后 body 被 micromorph 替换，overlay 会被销毁，需重建）
+  // Calculate the initial scale so the image fits inside the viewport with padding
+  function getFitScale() {
+    if (!zoomImg) return 1;
+    const rect = overlay.getBoundingClientRect();
+    const pad = 40; // padding from edges
+    const maxW = rect.width - pad * 2;
+    const maxH = rect.height - pad * 2;
+    const naturalW = zoomImg.naturalWidth || zoomImg.width;
+    const naturalH = zoomImg.naturalHeight || zoomImg.height;
+    if (naturalW === 0 || naturalH === 0) return 1;
+    const scaleX = maxW / naturalW;
+    const scaleY = maxH / naturalH;
+    return Math.min(scaleX, scaleY, 1); // never scale up beyond original size
+  }
+
+  // Reset zoom and position to fit the image in the viewport
+  function reset() {
+    scale = getFitScale();
+    posX = 0;
+    posY = 0;
+    apply();
+  }
+
+  // Open the lightbox with the given image
+  function openImg(src, alt) {
+    zoomImg.src = src;
+    zoomImg.alt = alt;
+    zoomImg.style.opacity = '0';
+    overlay.classList.add('open');
+
+    // Wait for the image to load so we can get natural dimensions
+    zoomImg.onload = function() {
+      const fitScale = getFitScale();
+      scale = fitScale;
+      posX = 0;
+      posY = 0;
+      apply();
+      zoomImg.style.opacity = '1';
+    };
+    // If already cached, trigger onload immediately
+    if (zoomImg.complete) {
+      zoomImg.onload();
+    }
+  }
+
+  // Close the lightbox
+  function closeImg() {
+    overlay.classList.remove('open');
+  }
+
+  // Ensure the overlay DOM exists (re‑create it after SPA navigation if needed)
   function ensureOverlay() {
     overlay = document.querySelector('.img-zoom-overlay');
     if (overlay) { zoomImg = overlay.querySelector('.img-zoom-img'); return; }
@@ -74,7 +121,7 @@ const ImageZoom: QuartzComponentConstructor = () => {
     zoomImg.className = 'img-zoom-img';
     hint = document.createElement('div');
     hint.className = 'img-zoom-hint';
-    hint.textContent = '滚轮缩放 · 拖拽平移 · 双击复位 · Esc 关闭';
+    hint.textContent = 'Scroll to zoom · Drag to pan · Double-click to reset · Esc to close';
     overlay.appendChild(zoomImg);
     overlay.appendChild(hint);
     document.body.appendChild(overlay);
@@ -107,7 +154,7 @@ const ImageZoom: QuartzComponentConstructor = () => {
     zoomImg.addEventListener('dblclick', reset);
   }
 
-  // document 级监听只需挂一次（document 本身不会被替换，事件委托对切页后的新图片同样生效）
+  // Attach global event listeners (document never gets replaced, so we only need to add them once)
   function ensureDocListeners() {
     if (window.__imgZoomDocReady) return;
     window.__imgZoomDocReady = true;
@@ -128,7 +175,7 @@ const ImageZoom: QuartzComponentConstructor = () => {
   function init() { ensureOverlay(); ensureDocListeners(); }
 
   init();
-  // SPA 切页后重建 overlay（document 监听复用，无需重挂）
+  // Rebuild overlay after SPA navigation (document listeners are reused)
   document.addEventListener('nav', init);
   document.addEventListener('render', init);
 })();
