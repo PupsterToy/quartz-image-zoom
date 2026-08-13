@@ -1,7 +1,7 @@
 # quartz-image-zoom
 
 > [!IMPORTANT]
-> This is a fork of [mgxhkefate/image-zoom](https://github.com/mgxhkefate/image-zoom) that fixes the loss of image quality on zoom.
+> This is a fork of [mgxhkefate/image-zoom](https://github.com/mgxhkefate/image-zoom) that fixes the loss of image quality on zoom and accidental zoom reset on drag-end (image lightbox).
 
 > Quartz v5 component plugin — click any content image to open a full-screen lightbox with scroll-zoom, drag-pan, double-click reset, and Esc to close.
 
