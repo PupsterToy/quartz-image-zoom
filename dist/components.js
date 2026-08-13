@@ -1,4 +1,6 @@
-var o=()=>{let e=()=>null;return e.css=`
+var o = () => {
+  let e = () => null;
+  e.css = `
 .img-zoom-overlay {
   position: fixed;
   inset: 0;
@@ -12,13 +14,13 @@ var o=()=>{let e=()=>null;return e.css=`
 }
 .img-zoom-overlay.open { display: flex; }
 .img-zoom-img {
-  max-width: 90vw;
-  max-height: 90vh;
+  /* Removed max-width/max-height – size is now controlled via transform */
   transform-origin: center center;
   cursor: grab;
   user-select: none;
   -webkit-user-drag: none;
   will-change: transform;
+  image-rendering: auto; /* auto for photos, crisp-edges for pixel art / screenshots */
 }
 .img-zoom-img.grabbing { cursor: grabbing; }
 .img-zoom-hint {
@@ -33,7 +35,8 @@ var o=()=>{let e=()=>null;return e.css=`
   border-radius: 20px;
   pointer-events: none;
 }
-`,e.afterDOMLoaded=`
+`;
+  e.afterDOMLoaded = `
 (function () {
   if (window.__imgZoomReady) return;
   window.__imgZoomReady = true;
@@ -41,17 +44,68 @@ var o=()=>{let e=()=>null;return e.css=`
   var overlay, zoomImg, hint;
   var scale = 1, posX = 0, posY = 0, panning = false, startX = 0, startY = 0;
 
+  // Apply current transform (translate + scale)
   function apply() {
     zoomImg.style.transform = 'translate(' + posX + 'px,' + posY + 'px) scale(' + scale + ')';
   }
-  function reset() { scale = 1; posX = 0; posY = 0; apply(); }
-  function openImg(src, alt) { zoomImg.src = src; zoomImg.alt = alt; reset(); overlay.classList.add('open'); }
-  function closeImg() { overlay.classList.remove('open'); }
 
-  // \u91CD\u5EFA\u706F\u7BB1 DOM\uFF08\u5207\u9875\u540E body \u88AB micromorph \u66FF\u6362\uFF0Coverlay \u4F1A\u88AB\u9500\u6BC1\uFF0C\u9700\u91CD\u5EFA\uFF09
+  // Calculate the initial scale so the image fits inside the viewport with padding
+  function getFitScale() {
+    if (!zoomImg) return 1;
+    var rect = overlay.getBoundingClientRect();
+    var pad = 40; // padding from edges
+    var maxW = rect.width - pad * 2;
+    var maxH = rect.height - pad * 2;
+    var naturalW = zoomImg.naturalWidth || zoomImg.width;
+    var naturalH = zoomImg.naturalHeight || zoomImg.height;
+    if (naturalW === 0 || naturalH === 0) return 1;
+    var scaleX = maxW / naturalW;
+    var scaleY = maxH / naturalH;
+    return Math.min(scaleX, scaleY, 1); // never scale up beyond original size
+  }
+
+  // Reset zoom and position to fit the image in the viewport
+  function reset() {
+    scale = getFitScale();
+    posX = 0;
+    posY = 0;
+    apply();
+  }
+
+  // Open the lightbox with the given image
+  function openImg(src, alt) {
+    zoomImg.src = src;
+    zoomImg.alt = alt;
+    zoomImg.style.opacity = '0';
+    overlay.classList.add('open');
+
+    // Wait for the image to load so we can get natural dimensions
+    zoomImg.onload = function () {
+      var fitScale = getFitScale();
+      scale = fitScale;
+      posX = 0;
+      posY = 0;
+      apply();
+      zoomImg.style.opacity = '1';
+    };
+    // If already cached, trigger onload immediately
+    if (zoomImg.complete) {
+      zoomImg.onload();
+    }
+  }
+
+  // Close the lightbox
+  function closeImg() {
+    overlay.classList.remove('open');
+  }
+
+  // Ensure the overlay DOM exists (re‑create it after SPA navigation if needed)
   function ensureOverlay() {
     overlay = document.querySelector('.img-zoom-overlay');
-    if (overlay) { zoomImg = overlay.querySelector('.img-zoom-img'); return; }
+    if (overlay) {
+      zoomImg = overlay.querySelector('.img-zoom-img');
+      return;
+    }
 
     overlay = document.createElement('div');
     overlay.className = 'img-zoom-overlay';
@@ -59,7 +113,7 @@ var o=()=>{let e=()=>null;return e.css=`
     zoomImg.className = 'img-zoom-img';
     hint = document.createElement('div');
     hint.className = 'img-zoom-hint';
-    hint.textContent = '\u6EDA\u8F6E\u7F29\u653E \xB7 \u62D6\u62FD\u5E73\u79FB \xB7 \u53CC\u51FB\u590D\u4F4D \xB7 Esc \u5173\u95ED';
+    hint.textContent = 'Scroll to zoom · Drag to pan · Double-click to reset · Esc to close';
     overlay.appendChild(zoomImg);
     overlay.appendChild(hint);
     document.body.appendChild(overlay);
@@ -71,7 +125,9 @@ var o=()=>{let e=()=>null;return e.css=`
       apply();
     }, { passive: false });
 
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeImg(); });
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeImg();
+    });
     zoomImg.addEventListener('pointerdown', function (e) {
       panning = true;
       startX = e.clientX - posX;
@@ -92,7 +148,7 @@ var o=()=>{let e=()=>null;return e.css=`
     zoomImg.addEventListener('dblclick', reset);
   }
 
-  // document \u7EA7\u76D1\u542C\u53EA\u9700\u6302\u4E00\u6B21\uFF08document \u672C\u8EAB\u4E0D\u4F1A\u88AB\u66FF\u6362\uFF0C\u4E8B\u4EF6\u59D4\u6258\u5BF9\u5207\u9875\u540E\u7684\u65B0\u56FE\u7247\u540C\u6837\u751F\u6548\uFF09
+  // Attach global event listeners (document never gets replaced, so we only need to add them once)
   function ensureDocListeners() {
     if (window.__imgZoomDocReady) return;
     window.__imgZoomDocReady = true;
@@ -107,14 +163,22 @@ var o=()=>{let e=()=>null;return e.css=`
       e.preventDefault();
       openImg(img.currentSrc || img.src, img.alt);
     });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeImg(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeImg();
+    });
   }
 
-  function init() { ensureOverlay(); ensureDocListeners(); }
+  function init() {
+    ensureOverlay();
+    ensureDocListeners();
+  }
 
   init();
-  // SPA \u5207\u9875\u540E\u91CD\u5EFA overlay\uFF08document \u76D1\u542C\u590D\u7528\uFF0C\u65E0\u9700\u91CD\u6302\uFF09
+  // Rebuild overlay after SPA navigation (document listeners are reused)
   document.addEventListener('nav', init);
   document.addEventListener('render', init);
 })();
-`,e};export{o as ImageZoom};
+`;
+  return e;
+};
+export { o as ImageZoom };
