@@ -10,14 +10,14 @@
   "quartz": {
     "name": "image-zoom",
     "displayName": "Image Zoom",
-    "description": "Click on images in the main content to open a lightbox with zoom, pan, double-click reset, and Esc to close.",
+    "description": "Click on images in the main content to open a lightbox with zoom, pan, double-click reset, and Esc or click outside of image to close.",
     "version": "1.0.0",
     "requiresInstall": false,
     "components": {
       "ImageZoom": {
         "name": "ImageZoom",
         "displayName": "Image Zoom",
-        "description": "Click on images in the main content to open a lightbox with zoom, pan, double-click reset, and Esc to close.",
+        "description": "Click on images in the main content to open a lightbox with zoom, pan, double-click reset, and Esc or click outside of image to close.",
         "version": "1.0.0"
       }
     }
