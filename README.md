@@ -1,4 +1,7 @@
-# image-zoom
+# quartz-image-zoom
+
+> [!IMPORTANT]
+> This is a fork of [mgxhkefate/image-zoom](https://github.com/mgxhkefate/image-zoom) that fixes the loss of image quality on zoom.
 
 > Quartz v5 component plugin — click any content image to open a full-screen lightbox with scroll-zoom, drag-pan, double-click reset, and Esc to close.
 
@@ -33,14 +36,20 @@ The overlay and document-level listeners are created once and reused; only the o
 
 ### Option A — GitHub source (recommended)
 
+```bash
+npx quartz plugin add github:PupsterToy/quartz-image-zoom
+```
+
+### Option B — GitHub source
+
 ```yaml
 # quartz.config.yaml
 plugins:
-  - source: "git+https://github.com/mgxhkefate/image-zoom.git"
+  - source: "git+https://github.com/PupsterToy/quartz-image-zoom.git"
     enabled: true
 ```
 
-### Option B — local path
+### Option C — local path
 
 ```yaml
 plugins:
