@@ -121,7 +121,7 @@ const ImageZoom: QuartzComponentConstructor = () => {
     zoomImg.className = 'img-zoom-img';
     hint = document.createElement('div');
     hint.className = 'img-zoom-hint';
-    hint.textContent = 'Scroll to zoom · Drag to pan · Double-click to reset · Esc to close';
+    hint.textContent = 'Scroll to zoom · Drag to pan · Double-click to reset · Esc or click outside of image to close';
     overlay.appendChild(zoomImg);
     overlay.appendChild(hint);
     document.body.appendChild(overlay);
@@ -166,6 +166,12 @@ const ImageZoom: QuartzComponentConstructor = () => {
       if (img.closest('.explorer')) return;
       if (img.closest('[data-component="explorer"]')) return;
       if (/icon|logo/i.test(img.className || '')) return;
+	  
+	  // Prevent reopening the image if the click occurs inside the lightbox overlay.
+	  // After a drag (pointerup), the browser may fire a click event on the same image.
+	  // Without this guard, that click would call openImg() again and reset the zoom.
+	  if (img.closest('.img-zoom-overlay')) return;
+	  
       e.preventDefault();
       openImg(img.currentSrc || img.src, img.alt);
     });
