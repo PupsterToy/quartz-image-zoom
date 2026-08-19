@@ -53,7 +53,7 @@ plugins:
 
 ```yaml
 plugins:
-  - source: "./custom-plugins/image-zoom"
+  - source: "./custom-plugins/quartz-image-zoom"
     enabled: true
 ```
 
